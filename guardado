@@ -1,0 +1,178 @@
+from requests_html import HTMLSession
+import json
+from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram import Update
+
+# JSON file path for storing user intervals
+INTERVALS_FILE = 'intervals.json'
+LINKS_FILE = 'links.json'
+URL_Grade = 'https://talk-point.de/search?type=article%2Cpage%2Cproduct&q=&sort=created-descending&pf_t_produktzustand=Zustand_C&pf_t_produktzustand=Zustand_B&pf_t_produktzustand=Zustand_A'
+URL_ALL= 'https://talk-point.de/search?type=article%2Cpage%2Cproduct&q=&sort=created-descending'
+MOST_RECENT_FILE = 'most_recent.txt'
+most_recent = None
+
+# Dictionary to store user intervals
+user_intervals = {}
+user_links = {}
+
+def get_most_recent():
+    try:
+        with open(MOST_RECENT_FILE, 'r') as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        return None
+
+def set_most_recent(value):
+    with open(MOST_RECENT_FILE, 'w') as file:
+        file.write(value)
+
+# Load user intervals from the JSON file
+def load_intervals():
+    global user_intervals
+    try:
+        with open(INTERVALS_FILE, 'r') as file:
+            user_intervals = json.load(file)
+    except FileNotFoundError:
+        user_intervals = {}
+
+def load_links():
+    global user_links
+    try:
+        with open(LINKS_FILE, 'r') as file:
+            user_links = json.load(file)
+    except FileNotFoundError:
+        user_links = {}
+
+# Save user intervals to the JSON file
+def save_intervals():
+    with open(INTERVALS_FILE, 'w') as file:
+        json.dump(user_intervals, file)
+
+
+# Save user intervals to the JSON file
+def save_links():
+    with open(LINKS_FILE, 'w') as file:
+        json.dump(user_links, file)
+
+# Handle the /start command
+def start(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    context.bot.send_message(chat_id=chat_id, text='Welcome! Use /interval <seconds> to set the interval.')
+
+# Handle the /stop command
+def stop(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    if str(chat_id) in user_intervals:
+        # Remove the job for the user
+        job = context.job_queue.get_jobs_by_name(str(chat_id))
+        if job:
+            job[0].schedule_removal()
+            del user_intervals[str(chat_id)]
+            save_intervals()
+            context.bot.send_message(chat_id=chat_id, text='Update stopped.')
+        else:
+            context.bot.send_message(chat_id=chat_id, text='No interval is set.')
+    else:
+        context.bot.send_message(chat_id=chat_id, text='No interval is set.')
+
+
+# Handle the /set_interval command
+def set_interval(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    try:
+        interval = int(context.args[0])
+        if interval <= 0:
+            raise ValueError()
+
+        # Check if the user already has an interval set
+        if str(chat_id) in user_intervals:
+            # Remove the previous job
+            job = context.job_queue.get_jobs_by_name(str(chat_id))
+            if job:
+                job[0].schedule_removal()
+
+        # Store the new interval for the user
+        user_intervals[str(chat_id)] = interval
+        save_intervals()
+
+        # Schedule data function for the specified interval
+        job = context.job_queue.run_repeating(data, interval, context=chat_id, name=str(chat_id))
+        context.bot.send_message(chat_id=chat_id, text=f'Interval set to {interval} seconds.')
+
+    except (IndexError, ValueError):
+        context.bot.send_message(chat_id=chat_id, text='Invalid interval. Please provide a positive integer.')
+
+
+def set_link(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    message = ''
+    try:
+        if update.effective_message.text == '/allproducts':
+            link = URL_ALL
+            message = f"Now getting updates from all products"
+        else:
+            link = URL_Grade
+            message = f"Now getting updates from Grade A/B/C products"
+
+        # Check if the user already has an interval set
+        if str(chat_id) in user_links:
+            # Remove the previous job
+            job = context.job_queue.get_jobs_by_name(str(chat_id))
+            if job:
+                job[0].schedule_removal()
+
+        # Store the new interval for the user
+        user_links[str(chat_id)] = link
+        save_links()
+
+        # Schedule data function for the specified interval
+        #não se se é preciso apagar aqui ou não
+        job = context.job_queue.run_repeating(data, user_intervals[str(chat_id)], context=chat_id, name=str(chat_id))
+        context.bot.send_message(chat_id=chat_id, text=message)
+
+    except (IndexError, ValueError):
+        context.bot.send_message(chat_id=chat_id, text='Please don\'t write anything else')
+
+
+def onlineSearch(link):
+    most_recent = get_most_recent()  # Read the most_recent value from the file
+    session = HTMLSession()
+    response = session.get(URL_Grade)
+    try:
+        response.html.render(wait=0)
+        # ul_element = response.html.find('.boost-pfs-filter-products', first=True)
+        # word_count = response.html.find('.boost-pfs-search-total-result', first=True)
+        # print(ul_element)
+    except Exception as e:
+        print(e)
+
+
+    session.close()
+
+
+# Handle the data function to be executed with the specified interval
+def data(context: CallbackContext):
+    chat_id = context.job.context
+    if str(chat_id) in user_intervals and str(chat_id) in user_links:
+        print(user_links[str(chat_id)])
+        message = onlineSearch(user_links[str(chat_id)])
+        #context.bot.send_message(chat_id=chat_id, text=message)
+
+# Load user intervals from the JSON file on bot startup
+load_intervals()
+load_links()
+
+# Initialize the bot
+updater = Updater('5849084397:AAHOJwEIUNxXml143UY9dHnAd4wdLYPvMUg', use_context=True)
+dispatcher = updater.dispatcher
+
+# Register command handlers
+dispatcher.add_handler(CommandHandler('start', start))
+dispatcher.add_handler(CommandHandler('stop', start))
+dispatcher.add_handler(CommandHandler('interval', set_interval))
+dispatcher.add_handler(CommandHandler('grade', set_link))
+dispatcher.add_handler(CommandHandler('allproducts', set_link))
+
+# Start the bot
+updater.start_polling()
+updater.idle()
