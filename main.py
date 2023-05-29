@@ -6,97 +6,38 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
 # Local storage files
-INTERVALS_FILE = 'intervals.json'
-LINKS_FILE = 'links.json'
-STATUS_FILE = 'status.json'
-MOST_RECENT_FILE = 'most_recent.txt'
+SETTINGS_FILE = 'user_settings.json'
 
 # Website links
 URL_GRADE = 'https://talk-point.de/search?type=article%2Cpage%2Cproduct&q=&sort=created-descending&pf_t_produktzustand=Zustand_C&pf_t_produktzustand=Zustand_B&pf_t_produktzustand=Zustand_A'
 URL_ALL = 'https://talk-point.de/search?type=article%2Cpage%2Cproduct&q=&sort=created-descending'
+DEFAULT_INTERVAL = 1800
 
 # Telegram bot token
 TOKEN = '5849084397:AAHOJwEIUNxXml143UY9dHnAd4wdLYPvMUg'
 
 # Global variables
-user_intervals = {}
-user_links = {}
-user_status = {}
-
-# Gets the most recent product from file
-def get_most_recent():
-    try:
-        with open(MOST_RECENT_FILE, 'r') as file:
-            return file.read().strip()
-    except FileNotFoundError:
-        return None
-
-# Set the most recent product in file
-def set_most_recent(value):
-    with open(MOST_RECENT_FILE, 'w') as file:
-        file.write(value)
-
-# Load user intervals from the JSON file
-def load_intervals():
-    global user_intervals
-    try:
-        with open(INTERVALS_FILE, 'r') as file:
-            data = file.read()
-            if data:
-                user_intervals = json.loads(data)
-            else:
-                user_intervals = {}
-    except FileNotFoundError:
-        user_intervals = {}
-
-# Load user links from the JSON file
-def load_links():
-    global user_links
-    try:
-        with open(LINKS_FILE, 'r') as file:
-            data = file.read()
-            if data:
-                user_links = json.loads(data)
-            else:
-                user_links = {}
-    except FileNotFoundError:
-        user_links = {}
+user_settings = {}
 
 # Load user status from the JSON file
-def load_status():
-    global user_status
+def load_settings():
+    global user_settings
     try:
-        with open(STATUS_FILE, 'r') as file:
+        with open(SETTINGS_FILE, 'r') as file:
             data = file.read()
             if data:
-                user_status = json.loads(data)
+                user_settings = json.loads(data)
             else:
-                user_status = {}
+                user_settings = {}
     except FileNotFoundError:
-        user_status = {}
+        user_settings = {}
 
-
-# Save user intervals to the JSON file
-def save_intervals():
-    with open(INTERVALS_FILE, 'w') as file:
-        if user_intervals:
-            json.dump(user_intervals, file)
-        else:
-            file.write('')
-
-# Save user links to the JSON file
-def save_links():
-    with open(LINKS_FILE, 'w') as file:
-        if user_links:
-            json.dump(user_links, file)
-        else:
-            file.write('')
 
 # Save user status to the JSON file
-def save_status():
-    with open(STATUS_FILE, 'w') as file:
-        if user_status:
-            json.dump(user_status, file)
+def save_settings():
+    with open(SETTINGS_FILE, 'w') as file:
+        if user_settings:
+            json.dump(user_settings, file)
         else:
             file.write('')
 
@@ -109,16 +50,14 @@ def help(update: Update, context: CallbackContext):
 # Handle the /stop command
 def stop(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
-    if str(chat_id) in user_status:
-        if user_status[str(chat_id)] == "running":
+    if str(chat_id) in user_settings:
+        if user_settings[str(chat_id)].get("status") == "running":
             # Remove the job for the user
             job = context.job_queue.get_jobs_by_name(str(chat_id))
             if job:
                 job[0].schedule_removal()
-                # user_intervals[str(chat_id)] = -1  # Set interval to -1
-                # save_intervals()
-                user_status[str(chat_id)] = "stopped"
-                save_status()
+                user_settings[str(chat_id)]["status"] = "stopped"
+                save_settings()
                 context.bot.send_message(chat_id=chat_id,text='Updates have stopped.\nUse /run to start getting updates')
                 print(update.effective_chat.username + " stopped the updates")
             else:
@@ -139,15 +78,23 @@ def set_interval(update: Update, context: CallbackContext):
             raise ValueError()
 
         # Check if the user already has an interval set
-        if str(chat_id) in user_intervals:
+        if str(chat_id) in user_settings:
             # Remove the previous job
             job = context.job_queue.get_jobs_by_name(str(chat_id))
             if job:
                 job[0].schedule_removal()
 
-        # Store the new interval for the user
-        user_intervals[str(chat_id)] = interval
-        save_intervals()
+        # Check if a key exists in the dictionary
+        if not str(chat_id) in user_settings:
+            user_settings[str(chat_id)] = {
+                "interval": interval,
+                "link": URL_ALL,
+                "most_recent": "",
+                "status": "stopped"
+            }
+
+        user_settings[str(chat_id)]["interval"] = interval
+        save_settings()
 
         context.bot.send_message(chat_id=chat_id, text=f'Interval set to {interval} seconds.')
 
@@ -167,15 +114,23 @@ def set_link(update: Update, context: CallbackContext):
             message = f"Now getting updates from Grade A/B/C products"
 
         # Check if the user already has an interval set
-        if str(chat_id) in user_links:
+        if str(chat_id) in user_settings:
             # Remove the previous job
             job = context.job_queue.get_jobs_by_name(str(chat_id))
             if job:
                 job[0].schedule_removal()
 
-        # Store the new interval for the user
-        user_links[str(chat_id)] = link
-        save_links()
+        # Check if a key exists in the dictionary
+        if not str(chat_id) in user_settings:
+            user_settings[str(chat_id)] = {
+                "interval": DEFAULT_INTERVAL,
+                "link": link,
+                "most_recent": "",
+                "status": "stopped"
+            }
+
+        user_settings[str(chat_id)]["link"] = link
+        save_settings()
 
         context.bot.send_message(chat_id=chat_id, text=message)
 
@@ -183,8 +138,8 @@ def set_link(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=chat_id, text='Please don\'t write anything else')
 
 # Loads the browser and gets the most recent product
-def online_search(link):
-    most_recent = get_most_recent()  # Read the most_recent value from the file
+def online_search(chat_id,link):
+    most_recent = user_settings[str(chat_id)].get("most_recent")
     new_product_count = -1
     options = Options()
     options.add_argument("--headless")
@@ -219,7 +174,8 @@ def online_search(link):
                 # Product data
                 most_recent = product
                 productID = most_recent.split('/')[4]
-                set_most_recent(most_recent)  # Write the updated most_recent value to the file
+                user_settings[str(chat_id)]["most_recent"] = most_recent
+                save_settings()
 
                 # returns a message with the new product
                 if new_product_count == 1 or new_product_count == -1:
@@ -235,42 +191,43 @@ def online_search(link):
 def run(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
 
-    if not str(chat_id) in user_status:
-        user_status[str(chat_id)] = "running"
-        save_status()
+    # Check if a key exists in the dictionary
+    if not str(chat_id) in user_settings:
+        user_settings[str(chat_id)] = {
+            "interval": DEFAULT_INTERVAL,
+            "link": URL_ALL,
+            "most_recent": "",
+            "status" : "stopped"
+        }
 
-    # if the user doesn't exist in the list, added with default interval
-    if not str(chat_id) in user_intervals:
-        user_intervals[str(chat_id)] = 1800
+    if user_settings[str(chat_id)].get("interval") is None or user_settings[str(chat_id)].get("interval") == "" or user_settings[str(chat_id)].get("interval") == "0"  or user_settings[str(chat_id)].get("interval") == 0:
+        user_settings[str(chat_id)]["interval"] = DEFAULT_INTERVAL
         context.bot.send_message(chat_id=chat_id, text='Default interval of 30 minutes was set. /interval <seconds> to change.')
-        save_intervals()
 
-    # if the user doesn't exist in the list, added with default URL
-    if not str(chat_id) in user_links:
-        user_links[str(chat_id)] = URL_ALL
+    if user_settings[str(chat_id)].get("link") is None or user_settings[str(chat_id)].get("link") == "":
+        user_settings[str(chat_id)]["link"] = URL_ALL
         context.bot.send_message(chat_id=chat_id, text='Now getting updates from all products. \grade to change.')
-        save_links()
 
-    if user_status[str(chat_id)] == "stopped":
-        # if the user exists in the interval, and the interval > 0, runs the notify that checks the website
-        if str(chat_id) in user_intervals:
-            interval = user_intervals[str(chat_id)]
-            if interval > 0:
-                link = user_links.get(str(chat_id))  # Use .get() to handle missing link case
-                context.bot.send_message(chat_id=chat_id, text=f'Updates have started every {interval} seconds.')
-                print(update.effective_chat.username + " joined the updates")
-                user_status[str(chat_id)] = "running"
-                save_status()
-                context.job_queue.run_repeating(notify, interval, context=(chat_id, link), name=str(chat_id))
-            else:
-                context.bot.send_message(chat_id=chat_id, text='Please set an interval using /interval <seconds>.')
+    if user_settings[str(chat_id)].get("status") is None or user_settings[str(chat_id)].get("status") == "":
+        user_settings[str(chat_id)]["status"] = "running"
+
+    save_settings()
+
+    if user_settings[str(chat_id)].get("status") == "stopped":
+        interval = user_settings[str(chat_id)].get("interval")
+        link = user_settings[str(chat_id)].get("link")  # Use .get() to handle missing link case
+        context.bot.send_message(chat_id=chat_id, text=f'Updates have started every {interval} seconds.')
+        print(update.effective_chat.username + " joined the updates")
+        user_settings[str(chat_id)]["status"] = "running"
+        save_settings()
+        context.job_queue.run_repeating(notify, interval, context=(chat_id, link), name=str(chat_id))
     else:
         context.bot.send_message(chat_id=chat_id, text='Updates were already running.')
 
 # Notifies the user with data from the function online_search
 def notify(context: CallbackContext):
     chat_id, link = context.job.context
-    message = online_search(link)
+    message = online_search(chat_id,link)
     # if there's a message, sends to the user
     if message:
         context.bot.send_message(chat_id=chat_id, text=message, parse_mode='Markdown')
@@ -281,14 +238,12 @@ def main():
     print('running!')
 
     # Load user intervals from the JSON file on bot startup
-    load_intervals()
-    load_links()
-    load_status()
+    load_settings()
 
-    for each in user_status:
-        user_status[each] = "stopped"
+    for user_id, settings in user_settings.items():
+        settings["status"] = "stopped"
 
-    save_status()
+    save_settings()
 
     # Initialize the bot
     updater = Updater(TOKEN, use_context=True)
@@ -306,7 +261,7 @@ def main():
     updater.start_polling()
 
     # Send a message to all users
-    for chat_id in user_intervals:
+    for chat_id in user_settings.keys():
         updater.bot.send_message(chat_id=chat_id, text='The bot has restarted.\nPlease /run to continue getting updates')
 
     updater.idle()

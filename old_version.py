@@ -12,8 +12,6 @@ TOKEN = '5849084397:AAHOJwEIUNxXml143UY9dHnAd4wdLYPvMUg'
 chat_id_henrique = "962245992"
 chat_id_fred = "760157734"
 
-MOST_RECENT_FILE = 'most_recent.txt'
-
 def get_most_recent():
     try:
         with open(MOST_RECENT_FILE, 'r') as file:
