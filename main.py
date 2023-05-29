@@ -8,6 +8,7 @@ from selenium.webdriver.firefox.options import Options
 # Local storage files
 INTERVALS_FILE = 'intervals.json'
 LINKS_FILE = 'links.json'
+STATUS_FILE = 'status.json'
 MOST_RECENT_FILE = 'most_recent.txt'
 
 # Website links
@@ -20,6 +21,7 @@ TOKEN = '5849084397:AAHOJwEIUNxXml143UY9dHnAd4wdLYPvMUg'
 # Global variables
 user_intervals = {}
 user_links = {}
+user_status = {}
 
 # Gets the most recent product from file
 def get_most_recent():
@@ -60,6 +62,19 @@ def load_links():
     except FileNotFoundError:
         user_links = {}
 
+# Load user status from the JSON file
+def load_status():
+    global user_status
+    try:
+        with open(STATUS_FILE, 'r') as file:
+            data = file.read()
+            if data:
+                user_status = json.loads(data)
+            else:
+                user_status = {}
+    except FileNotFoundError:
+        user_status = {}
+
 
 # Save user intervals to the JSON file
 def save_intervals():
@@ -77,28 +92,41 @@ def save_links():
         else:
             file.write('')
 
+# Save user status to the JSON file
+def save_status():
+    with open(STATUS_FILE, 'w') as file:
+        if user_status:
+            json.dump(user_status, file)
+        else:
+            file.write('')
+
 
 # Handle the /help command
 def help(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
-    context.bot.send_message(chat_id=chat_id, text='Welcome! Use /interval <seconds> to set the interval.\nUse /run to start afeter setting an interval.\nUser /stop to stop updates.')
+    context.bot.send_message(chat_id=chat_id, text='Welcome!\nUse /interval <seconds> to set the interval.\nUse /run to start afeter setting an interval.\nUser /stop to stop updates.')
 
 # Handle the /stop command
 def stop(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
-    if str(chat_id) in user_intervals:
-        # Remove the job for the user
-        job = context.job_queue.get_jobs_by_name(str(chat_id))
-        if job:
-            job[0].schedule_removal()
-            user_intervals[str(chat_id)] = -1  # Set interval to -1
-            save_intervals()
-            context.bot.send_message(chat_id=chat_id, text='Updates have stopped.\nUse /interval <seconds> and /run to continue getting updates.')
-            print(update.effective_chat.username + " stopped the updates")
+    if str(chat_id) in user_status:
+        if user_status[str(chat_id)] == "running":
+            # Remove the job for the user
+            job = context.job_queue.get_jobs_by_name(str(chat_id))
+            if job:
+                job[0].schedule_removal()
+                # user_intervals[str(chat_id)] = -1  # Set interval to -1
+                # save_intervals()
+                user_status[str(chat_id)] = "stopped"
+                save_status()
+                context.bot.send_message(chat_id=chat_id,text='Updates have stopped.\nUse /run to start getting updates')
+                print(update.effective_chat.username + " stopped the updates")
+            else:
+                context.bot.send_message(chat_id=chat_id, text='No interval is set.')
         else:
-            context.bot.send_message(chat_id=chat_id, text='No interval is set.')
+            context.bot.send_message(chat_id=chat_id, text='Updates were already stopped.')
     else:
-        context.bot.send_message(chat_id=chat_id, text='No interval is set.')
+        context.bot.send_message(chat_id=chat_id, text='No updates were found for this user')
 
 
 
@@ -207,10 +235,14 @@ def online_search(link):
 def run(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
 
+    if not str(chat_id) in user_status:
+        user_status[str(chat_id)] = "running"
+        save_status()
+
     # if the user doesn't exist in the list, added with default interval
     if not str(chat_id) in user_intervals:
-        user_intervals[str(chat_id)] = 60
-        context.bot.send_message(chat_id=chat_id, text='Default interval of 60 was set. /interval <seconds> to change.')
+        user_intervals[str(chat_id)] = 1800
+        context.bot.send_message(chat_id=chat_id, text='Default interval of 30 minutes was set. /interval <seconds> to change.')
         save_intervals()
 
     # if the user doesn't exist in the list, added with default URL
@@ -219,16 +251,21 @@ def run(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=chat_id, text='Now getting updates from all products. \grade to change.')
         save_links()
 
-    # if the user exists in the interval, and the interval > 0, runs the notify that checks the website
-    if str(chat_id) in user_intervals:
-        interval = user_intervals[str(chat_id)]
-        if interval > 0:
-            link = user_links.get(str(chat_id))  # Use .get() to handle missing link case
-            context.bot.send_message(chat_id=chat_id,text=f'Updates have started every {interval} seconds.')
-            print(update.effective_chat.username + " joined the updates")
-            context.job_queue.run_repeating(notify, interval, context=(chat_id, link), name=str(chat_id))
-        else:
-            context.bot.send_message(chat_id=chat_id, text='Please set an interval using /interval <seconds>.')
+    if user_status[str(chat_id)] == "stopped":
+        # if the user exists in the interval, and the interval > 0, runs the notify that checks the website
+        if str(chat_id) in user_intervals:
+            interval = user_intervals[str(chat_id)]
+            if interval > 0:
+                link = user_links.get(str(chat_id))  # Use .get() to handle missing link case
+                context.bot.send_message(chat_id=chat_id, text=f'Updates have started every {interval} seconds.')
+                print(update.effective_chat.username + " joined the updates")
+                user_status[str(chat_id)] = "running"
+                save_status()
+                context.job_queue.run_repeating(notify, interval, context=(chat_id, link), name=str(chat_id))
+            else:
+                context.bot.send_message(chat_id=chat_id, text='Please set an interval using /interval <seconds>.')
+    else:
+        context.bot.send_message(chat_id=chat_id, text='Updates were already running.')
 
 # Notifies the user with data from the function online_search
 def notify(context: CallbackContext):
@@ -246,6 +283,12 @@ def main():
     # Load user intervals from the JSON file on bot startup
     load_intervals()
     load_links()
+    load_status()
+
+    for each in user_status:
+        user_status[each] = "stopped"
+
+    save_status()
 
     # Initialize the bot
     updater = Updater(TOKEN, use_context=True)
@@ -261,6 +304,11 @@ def main():
 
     # Start the bot
     updater.start_polling()
+
+    # Send a message to all users
+    for chat_id in user_intervals:
+        updater.bot.send_message(chat_id=chat_id, text='The bot has restarted.\nPlease /run to continue getting updates')
+
     updater.idle()
 
 if __name__ == '__main__':
