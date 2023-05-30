@@ -4,6 +4,9 @@ from telegram.ext import Updater, CommandHandler, CallbackContext
 from telegram import Update
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
+from datetime import datetime
+import os, psutil
+
 
 # Local storage files
 SETTINGS_FILE = 'user_settings.json'
@@ -59,7 +62,9 @@ def stop(update: Update, context: CallbackContext):
                 user_settings[str(chat_id)]["status"] = "stopped"
                 save_settings()
                 context.bot.send_message(chat_id=chat_id,text='Updates have stopped.\nUse /run to start getting updates')
-                print(update.effective_chat.username + " stopped the updates")
+                now = datetime.now()
+                dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+                print(update.effective_chat.username + " stopped the updates at " + dt_string)
             else:
                 context.bot.send_message(chat_id=chat_id, text='No interval is set.')
         else:
@@ -169,20 +174,27 @@ def online_search(chat_id,link):
         li_element = ul_element.find('li')
         if li_element:
             product = li_element['data-product-quickshop-url']
+            product_price = li_element.find("span", {"class", "money"}).text
+            product_name = li_element.find("h2", {"class", "productitem--title"}).text
             if product != most_recent:
-
                 # Product data
                 most_recent = product
                 productID = most_recent.split('/')[4]
                 user_settings[str(chat_id)]["most_recent"] = most_recent
                 save_settings()
 
+                now = datetime.now()
+                dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+                print(f"{chat_id} : {product_name} -> {product_price} | {dt_string}")
+
                 # returns a message with the new product
                 if new_product_count == 1 or new_product_count == -1:
-                    message = 'Novo produto no site!\nhttps://talk-point.de/products/' + productID
+                    message = f'{product_name} -> {product_price}\nhttps://talk-point.de/products/' + productID
                 else:
-                    message = f'Novo produto no site!\nhttps://talk-point.de/products/{productID}\nNovos produtos: {new_product_count}'
+                    message = f'{product_name} -> {product_price}\nhttps://talk-point.de/products/{productID}\nNovos produtos: {new_product_count}'
                 return message
+            else:
+                print(f"{chat_id} -> no product")
     else:
         print('Error: ul_element not found')
 
@@ -217,7 +229,9 @@ def run(update: Update, context: CallbackContext):
         interval = user_settings[str(chat_id)].get("interval")
         link = user_settings[str(chat_id)].get("link")  # Use .get() to handle missing link case
         context.bot.send_message(chat_id=chat_id, text=f'Updates have started every {interval} seconds.')
-        print(update.effective_chat.username + " joined the updates")
+        now = datetime.now()
+        dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+        print(update.effective_chat.username + " joined the updates at " + dt_string)
         user_settings[str(chat_id)]["status"] = "running"
         save_settings()
         context.job_queue.run_repeating(notify, interval, context=(chat_id, link), name=str(chat_id))
@@ -261,8 +275,11 @@ def main():
     updater.start_polling()
 
     # Send a message to all users
-    for chat_id in user_settings.keys():
-        updater.bot.send_message(chat_id=chat_id, text='The bot has restarted.\nPlease /run to continue getting updates')
+    #for chat_id in user_settings.keys():
+    #    updater.bot.send_message(chat_id=chat_id, text='The bot has restarted.\nPlease /run to continue getting updates')
+
+    process = psutil.Process()
+    print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 
     updater.idle()
 
