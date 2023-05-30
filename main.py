@@ -64,12 +64,18 @@ def check_status(update: Update, context: CallbackContext):
         else:
             print(str(chat_id) + '  checked status at  ' + dt_string)
 
+        string = ""
+
         if (user_settings[str(chat_id)].get('status') == "running"):
+            if user_settings[str(chat_id)].get("link") == URL_ALL:
+                string = "for all products."
+            if user_settings[str(chat_id)].get("link") == URL_GRADE:
+                string = "for all Grade A/B/C products."
             interval = user_settings[str(chat_id)].get("interval")
             if interval % 60 == 0:
-                message = f'Updates are currently running every {interval // 60} minute(s).'
+                message = f'Updates are currently running every {interval // 60} minute(s) {string}'
             else:
-                message = f'Updates are currently running every {interval} seconds.'
+                message = f'Updates are currently running every {interval} seconds {string}'
         else:
             message = "Updates are currently stopped."
 
