@@ -14,7 +14,7 @@ URL_ALL = 'https://talk-point.de/search?type=article%2Cpage%2Cproduct&q=&sort=cr
 DEFAULT_INTERVAL = 1800
 
 # Telegram bot token
-TOKEN = '5849084397:AAHOJwEIUNxXml143UY9dHnAd4wdLYPvMUg'
+TOKEN = '5849084397:AAGWlLjZIdO3Ize5Myl_gG5k7N3FV0PURmM'
 
 # Global variables
 user_settings = {}
