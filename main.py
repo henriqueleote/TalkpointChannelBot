@@ -1,7 +1,7 @@
 import json
 from bs4 import BeautifulSoup
-from telegram.ext import Updater, CommandHandler, CallbackContext
-from telegram import Update, Chat, Message
+from talkpoint_channel_bot.ext import Updater, CommandHandler, CallbackContext
+from talkpoint_channel_bot import Update, Chat, Message
 from selenium import webdriver
 from datetime import datetime
 import os, psutil
