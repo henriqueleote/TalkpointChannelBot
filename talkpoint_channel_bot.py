@@ -2,9 +2,6 @@ import time
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import telegram
-import re
-
-from telegram import ParseMode
 
 # URL of the website you want to fetch
 URL_ALL = 'https://talk-point.de/search?type=article%2Cpage%2Cproduct&q=&sort=created-descending'

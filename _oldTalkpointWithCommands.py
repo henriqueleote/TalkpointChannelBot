@@ -1,7 +1,7 @@
 import json
 from bs4 import BeautifulSoup
-from talkpoint_channel_bot.ext import Updater, CommandHandler, CallbackContext
-from talkpoint_channel_bot import Update, Chat, Message
+from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram import Update, Chat, Message
 from selenium import webdriver
 from datetime import datetime
 import os, psutil
@@ -173,12 +173,13 @@ def online_search(chat_id):
     chrome_options.add_argument("--disable-gpu")
     driver = webdriver.Chrome(options=chrome_options)
 
-    # Create the WebDriver instance
-    driver.get(link)
-    #driver.implicitly_wait(1)  # Wait up to 2 seconds for elements to appear
+    try:
+        # Create the WebDriver instance
+        driver.get(link)
+        html_content = driver.page_source
+    finally:
+        driver.quit()
 
-    html_content = driver.page_source
-    driver.quit()
 
     soup = BeautifulSoup(html_content, 'html.parser')
     ul_element = soup.select_one('.boost-pfs-filter-products')
@@ -336,6 +337,10 @@ def main():
         updater.bot.send_message(chat_id=chat_id, text='The bot has restarted.\nPlease /run to continue getting updates')
 
     print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
+    # Getting % usage of virtual_memory ( 3rd field)
+    print('RAM memory % used:', psutil.virtual_memory()[2])
+    # Getting usage of virtual_memory in GB ( 4th field)
+    print('RAM Used (GB):', psutil.virtual_memory()[3]/1000000000)
 
     updater.idle()
 
