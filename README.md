@@ -1,20 +1,50 @@
-# Website Telegram Bot
+# Talk-point Price Updates
 
-The Website Product Notifier Telegram Bot is a Python-based bot designed to monitor a specific website for product updates and send notifications to users via Telegram. The bot periodically checks the website for new products based on a user-defined interval and delivers the information directly to the users' Telegram accounts.
+This script fetches the latest product updates from Talk-point and sends them to a Telegram channel. It uses web scraping with Selenium and BeautifulSoup to extract data from the Talk-point website and the Telegram API to send notifications.
 
+## Requirements
 
-## Key Features
+- Python 3.x
+- Selenium
+- BeautifulSoup
+- Chrome WebDriver
+- Telegram Bot API token
 
-1. Automated Product Monitoring: The bot regularly scans the target website for new product updates, ensuring users stay informed about the latest additions.
-2. Telegram Integration: Notifications are sent directly to users' Telegram accounts, providing a convenient way to receive updates.
-3. Customizable Interval: Users can set the desired interval for the bot to check for new products, allowing them to choose how frequently they want to receive notifications.
-4. Product Details and Links: The bot provides detailed information about the latest products, including product names, descriptions, and links to the product pages for further exploration.
-5. User-specific Settings: Each user can configure their own preferences, such as the website URL to monitor and the update interval, ensuring a personalized experience.
+## Installation
+
+1. Clone the repository:
+
+```python
+git clone https://github.com/henriqueleote/TalkpointChannelBot
+cd your-repo
+```
+
+2. Install the required dependencies:
+
+```python
+pip install selenium beautifulsoup4
+```
+
+3. Download the Chrome WebDriver and place it in the project directory. Make sure the WebDriver version matches your Chrome browser version.
+
+4. Obtain a Telegram Bot API token by creating a bot through the BotFather. Copy the token for later use.
+
+5. Update the `TOKEN` variable in the script with your Telegram Bot API token.
+```python
+py TalkPointChannelBot
+```
+
+2. The script will continuously fetch the latest product updates from Talk-point.de and send them to the configured Telegram channel. It will check for new products since the last run.
+
+## Customization
+
+- Modify the `URL_ALL` and `URL_GRADE` variables in the script to fetch data from different URLs on the Talk-point website.
+- Adjust the sleep duration in the `time.sleep()` function to control the interval between each data fetch.
 
 ## Contributing
 
-So far a private project, no contributing required.
+Contributions are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request.
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+[MIT License](LICENSE)
