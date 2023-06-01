@@ -15,7 +15,7 @@ This script fetches the latest product updates from Talk-point and sends them to
 1. Clone the repository:
 
 ```python
-git clone https://github.com/henriqueleote/TalkpointChannelBot
+git clone https://github.com/henriqueleote/TalkpointChannelBot.git
 cd your-repo
 ```
 
@@ -31,7 +31,7 @@ pip install selenium beautifulsoup4
 
 5. Update the `TOKEN` variable in the script with your Telegram Bot API token.
 ```python
-py TalkPointChannelBot
+py TalkPointChannelBot.py
 ```
 
 2. The script will continuously fetch the latest product updates from Talk-point.de and send them to the configured Telegram channel. It will check for new products since the last run.
