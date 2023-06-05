@@ -216,26 +216,22 @@ def checkWatchlist(bot):
         watchlist.pop(val)
         save_watchlist()
 
-def main():
-    updater = Updater(token=TOKEN)
-    dispatcher = updater.dispatcher
+updater = Updater(token=TOKEN)
+dispatcher = updater.dispatcher
 
-    load_watchlist()
-    updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint', disable_notification=True)
+load_watchlist()
+#updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint', disable_notification=True)
 
-    # Add a callback query handler for button clicks
-    dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
+# Add a callback query handler for button clicks
+dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
 
-    updater.start_polling()
+updater.start_polling()
 
-    schedule.every().day.at("12:00").do(checkWatchlist(updater.bot))
+schedule.every().day.at("12:00").do(lambda: checkWatchlist(updater.bot))
 
-    while True:
-        schedule.run_pending()
-        getData(updater.bot)
-        time.sleep(180)
+while True:
+    schedule.run_pending()
+    getData(updater.bot)
+    time.sleep(180)
 
-    updater.stop()
-
-if __name__ == '__main__':
-    main()
+updater.stop()
