@@ -195,6 +195,7 @@ def get_updated_markup(product_id, price, button_text):
 
 def checkWatchlist(bot):
     toRemove = []
+    bot.send_message(chat_id=channel_id, text='Checking watchlist')
     for key, value in watchlist.items():
         product_id = value["productID"]
         old_price = value["price"]
@@ -220,7 +221,7 @@ updater = Updater(token=TOKEN)
 dispatcher = updater.dispatcher
 
 load_watchlist()
-#updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint', disable_notification=True)
+updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint', disable_notification=True)
 
 # Add a callback query handler for button clicks
 dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
