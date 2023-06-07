@@ -115,10 +115,9 @@ def getData(bot):
                     productID = product_item.split('/')[4]
                     product_price = product_li.find("span", {"class", "money"}).text
                     product_name = product_li.find("h2", {"class", "productitem--title"}).text
-                    #sendToChannel(productID, product_name, product_price, image, bot, "")
-                    print(product_name)
+                    sendToChannel(productID, product_name, product_price, image, bot, "")
                     time.sleep(2)
-                #set_most_recent(new_products[0]['data-product-quickshop-url'])
+                set_most_recent(new_products[0]['data-product-quickshop-url'])
                 new_products.clear()
                 res.clear()
             else:
