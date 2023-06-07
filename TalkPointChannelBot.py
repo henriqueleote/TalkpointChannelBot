@@ -228,7 +228,7 @@ updater = Updater(token=TOKEN)
 dispatcher = updater.dispatcher
 
 load_watchlist()
-updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint', disable_notification=True)
+#updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint', disable_notification=True)
 
 # Add a callback query handler for button clicks
 dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
