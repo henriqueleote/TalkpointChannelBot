@@ -87,12 +87,20 @@ def getData(bot):
 
     # Check how many products were added since the last "most_recent" until the newest
 
-    # TODO: If it doesn't exist, just show the newest
+    found_recent = False
+    val = []
     for index, element in enumerate(ul_element):
         if element['data-product-quickshop-url'] == most_recent:
-            # new_product_count = index
+            found_recent = True
             break
         new_products.append(element)
+
+        # Check if the loop has iterated 10 times without finding a match
+        if index == 9 and not found_recent:
+            val = new_products[:2]
+
+    if(val):
+        new_products = val
 
     # Find the most recent through the HTML <li> inside the <ul>
     if ul_element:
@@ -107,10 +115,10 @@ def getData(bot):
                     productID = product_item.split('/')[4]
                     product_price = product_li.find("span", {"class", "money"}).text
                     product_name = product_li.find("h2", {"class", "productitem--title"}).text
-                    sendToChannel(productID, product_name, product_price, image, bot, "")
-
+                    #sendToChannel(productID, product_name, product_price, image, bot, "")
+                    print(product_name)
                     time.sleep(2)
-                set_most_recent(new_products[0]['data-product-quickshop-url'])
+                #set_most_recent(new_products[0]['data-product-quickshop-url'])
                 new_products.clear()
                 res.clear()
             else:
