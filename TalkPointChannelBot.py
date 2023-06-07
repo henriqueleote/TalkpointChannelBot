@@ -186,7 +186,7 @@ def addWatchlist(update, context):
         emoji = '\u2705'
         button_text = f'{emoji} Added to Watchlist'
 
-    query.edit_message_reply_markup(reply_markup=get_updated_markup(product_id, pre_price, button_text))
+    query.edit_message_reply_markup(reply_markup=get_updated_markup(product_id, pre_price + ' €', button_text))
     save_watchlist()
 
 # Function to get the updated reply markup with the modified button text
