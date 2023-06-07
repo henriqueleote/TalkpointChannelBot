@@ -107,8 +107,7 @@ def getData(bot):
                     productID = product_item.split('/')[4]
                     product_price = product_li.find("span", {"class", "money"}).text
                     product_name = product_li.find("h2", {"class", "productitem--title"}).text
-
-                    sendToChannel(productID, product_name, product_price, image, bot)
+                    sendToChannel(productID, product_name, product_price, image, bot, "")
 
                     time.sleep(2)
                 set_most_recent(new_products[0]['data-product-quickshop-url'])
@@ -120,7 +119,7 @@ def getData(bot):
         print('Error: ul_element not found')
 
 
-def sendToChannel(productID, product_name, product_price, image, bot):
+def sendToChannel(productID, product_name, product_price, image, bot, message):
     img_src = ''
 
     grade = productID[-3:]
@@ -143,7 +142,10 @@ def sendToChannel(productID, product_name, product_price, image, bot):
 
     blue_circle = "\U0001F535"
     white_circle = "\u26AA"
-    title = f'{blue_circle}{white_circle} Talkpoint {white_circle}{blue_circle}\n'
+    if(message):
+        title = f'{blue_circle}{white_circle} Talkpoint {white_circle}{blue_circle}{message}'
+    else:
+        title = f'{blue_circle}{white_circle} Talkpoint {white_circle}{blue_circle}\n'
     message = f'{title}{product_name}\nPrice: {product_price}\nCondition: {condition} {condition_emoji}\nhttps://talk-point.de/products/' + productID
     if (img_src != ''):
 
@@ -155,6 +157,7 @@ def sendToChannel(productID, product_name, product_price, image, bot):
         keyboard = [[InlineKeyboardButton(button_text, callback_data=f'{productID}_{product_price}')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
+        #ORANGE IPHONE CASE WAS GIVING PROBLEMS
         bot.send_photo(chat_id=channel_id, photo=img_src, caption=message, reply_markup=reply_markup)
     else:
         bot.send_message(chat_id=channel_id, text=message)
@@ -195,6 +198,8 @@ def get_updated_markup(product_id, price, button_text):
 
 def checkWatchlist(bot):
     toRemove = []
+    load_watchlist()
+    print(watchlist)
     bot.send_message(chat_id=channel_id, text='Checking watchlist')
     for key, value in watchlist.items():
         product_id = value["productID"]
@@ -210,7 +215,9 @@ def checkWatchlist(bot):
 
         if(new_price < old_price):
             toRemove.append(product_id)
-            sendToChannel(product_id, product_name, new_price, image, bot)
+            graph_emoji = '\U0001f4c9'
+            message = f"\n{graph_emoji} Price drop {graph_emoji}\n"
+            sendToChannel(product_id, product_name, new_price, image, bot,message)
             time.sleep(2)
 
     for val in toRemove:
@@ -228,7 +235,7 @@ dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
 
 updater.start_polling()
 
-schedule.every().day.at("12:00").do(lambda: checkWatchlist(updater.bot))
+schedule.every().day.at("12:30").do(lambda: checkWatchlist(updater.bot))
 
 while True:
     schedule.run_pending()
