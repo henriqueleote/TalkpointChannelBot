@@ -215,7 +215,7 @@ def checkWatchlist(bot):
         soup = runWebDriver(f'https://talk-point.de/products/{product_id}')
         span_element = soup.select_one('div.price--main')
         price_element = span_element.find("span", {"class":"money"}).contents
-
+        //TODO, if he doesnt find because product was removed or is sold out
         image = soup.find('img', 'product-gallery--loaded-image')
         product_name = soup.select_one('h1.product-title').contents[0].replace("\n","").strip()
         new_price = float(price_element[0].replace("\n","").replace(" ","").replace("€","").replace(",","."))
