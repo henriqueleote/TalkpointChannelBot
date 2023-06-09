@@ -164,6 +164,7 @@ def sendToChannel(productID, product_name, product_price, image, bot, message):
         keyboard = [[InlineKeyboardButton(button_text, callback_data=f'{productID}_{product_price}')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
+        #TODO Check
         #ORANGE IPHONE CASE WAS GIVING PROBLEMS
         bot.send_photo(chat_id=channel_id, photo=img_src, caption=message, reply_markup=reply_markup)
     else:
@@ -214,18 +215,22 @@ def checkWatchlist(bot):
 
         soup = runWebDriver(f'https://talk-point.de/products/{product_id}')
         span_element = soup.select_one('div.price--main')
-        price_element = span_element.find("span", {"class":"money"}).contents
-        #TODO, if he doesnt find because product was removed or is sold out
-        image = soup.find('img', 'product-gallery--loaded-image')
-        product_name = soup.select_one('h1.product-title').contents[0].replace("\n","").strip()
-        new_price = float(price_element[0].replace("\n","").replace(" ","").replace("€","").replace(",","."))
+        if span_element:
+            price_element = span_element.find("span", {"class":"money"}).contents
+            image = soup.find('img', 'product-gallery--loaded-image')
+            product_name = soup.select_one('h1.product-title').contents[0].replace("\n","").strip()
+            new_price = float(price_element[0].replace("\n","").replace(" ","").replace("€","").replace(",","."))
 
-        if(new_price < old_price):
+            if(new_price < old_price):
+                toRemove.append(product_id)
+                graph_emoji = '\U0001f4c9'
+                message = f"\n{graph_emoji} Price drop {graph_emoji}\n"
+                sendToChannel(product_id, product_name, new_price, image, bot,message)
+                time.sleep(2)
+        else:
+            # Product doesnt exist anymore
             toRemove.append(product_id)
-            graph_emoji = '\U0001f4c9'
-            message = f"\n{graph_emoji} Price drop {graph_emoji}\n"
-            sendToChannel(product_id, product_name, new_price, image, bot,message)
-            time.sleep(2)
+            print("Product removed from watchlist because it was remove from website")
 
     for val in toRemove:
         watchlist.pop(val)
