@@ -215,7 +215,7 @@ def checkWatchlist(bot):
         soup = runWebDriver(f'https://talk-point.de/products/{product_id}')
         span_element = soup.select_one('div.price--main')
         price_element = span_element.find("span", {"class":"money"}).contents
-        //TODO, if he doesnt find because product was removed or is sold out
+        #TODO, if he doesnt find because product was removed or is sold out
         image = soup.find('img', 'product-gallery--loaded-image')
         product_name = soup.select_one('h1.product-title').contents[0].replace("\n","").strip()
         new_price = float(price_element[0].replace("\n","").replace(" ","").replace("€","").replace(",","."))
@@ -235,7 +235,7 @@ updater = Updater(token=TOKEN)
 dispatcher = updater.dispatcher
 
 load_watchlist()
-#updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint', disable_notification=True)
+updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint', disable_notification=True)
 
 # Add a callback query handler for button clicks
 dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
