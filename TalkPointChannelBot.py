@@ -20,7 +20,7 @@ TOKEN = '6201495078:AAGmPD9vEI_dIT1D4uAMbF2_9Rx3dOzc1Bg'
 channel_id = "-1001921638321"
 watchlist = {}
 DATA_FILE = "watchlist.json"
-"10089055-225"
+time = 180
 
 # Function to get the most recent URL from the file
 def get_most_recent():
@@ -238,11 +238,16 @@ def checkWatchlist(bot):
         watchlist.pop(val)
         save_watchlist()
 
+def setTime(val):
+    global time
+    time = val
+
+
 updater = Updater(token=TOKEN)
 dispatcher = updater.dispatcher
 
 load_watchlist()
-updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint', disable_notification=True)
+#updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint', disable_notification=True)
 
 # Add a callback query handler for button clicks
 dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
@@ -250,10 +255,12 @@ dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
 updater.start_polling()
 
 schedule.every().day.at("12:30").do(lambda: checkWatchlist(updater.bot))
+schedule.every().day.at("07:30").do(lambda: setTime(180))
+schedule.every().day.at("18:30").do(lambda: setTime(1800))
 
 while True:
     schedule.run_pending()
     getData(updater.bot)
-    time.sleep(180)
+    time.sleep(time)
 
 updater.stop()
