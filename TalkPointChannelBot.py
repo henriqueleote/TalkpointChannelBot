@@ -167,8 +167,10 @@ def sendToChannel(productID, product_name, product_price, image, bot, message):
         #TODO Check
         #ORANGE IPHONE CASE WAS GIVING PROBLEMS
         bot.send_photo(chat_id=channel_id, photo=img_src, caption=message, reply_markup=reply_markup)
+        time.sleep(2)
     else:
         bot.send_message(chat_id=channel_id, text=message)
+        time.sleep(2)
 
 def addWatchlist(update, context):
     global watchlist
