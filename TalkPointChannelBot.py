@@ -240,6 +240,7 @@ def checkWatchlist(bot):
 
 def setInterval(val):
     interval = val
+    print(f"Now running every {interval} seconds.")
 
 
 updater = Updater(token=TOKEN)
