@@ -261,7 +261,7 @@ dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
 
 updater.start_polling()
 
-schedule.every().day.at("12:45").do(lambda: checkWatchlist(updater.bot))
+schedule.every().day.at("13:00").do(lambda: checkWatchlist(updater.bot))
 schedule.every().day.at("07:30").do(lambda: setInterval(180))
 schedule.every().day.at("18:30").do(lambda: setInterval(1800))
 
