@@ -243,6 +243,7 @@ def checkWatchlist(bot):
     for val in toRemove:
         watchlist.pop(val)
         save_watchlist()
+    bot.send_message(chat_id=channel_id, text='Checking watchlist finished')
     isChecking = False
 
 def setInterval(val):
