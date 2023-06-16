@@ -200,6 +200,8 @@ def addWatchlist(update, context):
 
         query.edit_message_reply_markup(reply_markup=get_updated_markup(product_id, pre_price + ' €', button_text))
         save_watchlist()
+    else:
+        print("Can't add to the list because it's checking right now")
 
 # Function to get the updated reply markup with the modified button text
 def get_updated_markup(product_id, price, button_text):
@@ -212,7 +214,6 @@ def checkWatchlist(bot):
     isChecking = True
     toRemove = []
     load_watchlist()
-    print(watchlist)
     bot.send_message(chat_id=channel_id, text='Checking watchlist')
     for key, value in watchlist.items():
         product_id = value["productID"]
