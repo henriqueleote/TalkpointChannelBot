@@ -21,6 +21,7 @@ channel_id = "-1001921638321"
 watchlist = {}
 DATA_FILE = "watchlist.json"
 interval = 180
+isChecking = false
 
 # Function to get the most recent URL from the file
 def get_most_recent():
@@ -177,27 +178,28 @@ def addWatchlist(update, context):
     query = update.callback_query
     callback_data = query.data
 
-    # Extract the product ID and price from the callback data
-    product_id, pre_price = callback_data.split('_')
+    if isChecking is false:
+        # Extract the product ID and price from the callback data
+        product_id, pre_price = callback_data.split('_')
 
-    cleaned_string = pre_price.replace("€", "").replace(",", ".")
-    price = float(cleaned_string)
+        cleaned_string = pre_price.replace("€", "").replace(",", ".")
+        price = float(cleaned_string)
 
-    # Check if the product is already in the watchlist
-    if product_id in watchlist:
-        watchlist.pop(product_id)
-        emoji = '\u2795'
-        button_text = f'{emoji} Add to watchlist!'
-    else:
-        watchlist[product_id] = {
-            'productID' : product_id,
-            'price' : price
-        }
-        emoji = '\u2705'
-        button_text = f'{emoji} Added to Watchlist'
+        # Check if the product is already in the watchlist
+        if product_id in watchlist:
+            watchlist.pop(product_id)
+            emoji = '\u2795'
+            button_text = f'{emoji} Add to watchlist!'
+        else:
+            watchlist[product_id] = {
+                'productID' : product_id,
+                'price' : price
+            }
+            emoji = '\u2705'
+            button_text = f'{emoji} Added to Watchlist'
 
-    query.edit_message_reply_markup(reply_markup=get_updated_markup(product_id, pre_price + ' €', button_text))
-    save_watchlist()
+        query.edit_message_reply_markup(reply_markup=get_updated_markup(product_id, pre_price + ' €', button_text))
+        save_watchlist()
 
 # Function to get the updated reply markup with the modified button text
 def get_updated_markup(product_id, price, button_text):
@@ -207,6 +209,7 @@ def get_updated_markup(product_id, price, button_text):
     return reply_markup
 
 def checkWatchlist(bot):
+    isChecking = true
     toRemove = []
     load_watchlist()
     print(watchlist)
@@ -227,7 +230,7 @@ def checkWatchlist(bot):
                 toRemove.append(product_id)
                 graph_emoji = '\U0001f4c9'
                 message = f"\n{graph_emoji} Price drop {graph_emoji}\n"
-                sendToChannel(product_id, product_name, new_price, image, bot,message)
+                sendToChannel(product_id, product_name, new_price, image, bot, message)
                 time.sleep(2)
         else:
             # Product doesnt exist anymore
@@ -237,6 +240,7 @@ def checkWatchlist(bot):
     for val in toRemove:
         watchlist.pop(val)
         save_watchlist()
+    isChecking = false
 
 def setInterval(val):
     interval = val
@@ -247,14 +251,14 @@ updater = Updater(token=TOKEN)
 dispatcher = updater.dispatcher
 
 load_watchlist()
-#updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint', disable_notification=True)
+#updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint')
 
 # Add a callback query handler for button clicks
 dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
 
 updater.start_polling()
 
-schedule.every().day.at("12:30").do(lambda: checkWatchlist(updater.bot))
+schedule.every().day.at("12:45").do(lambda: checkWatchlist(updater.bot))
 schedule.every().day.at("07:30").do(lambda: setInterval(180))
 schedule.every().day.at("18:30").do(lambda: setInterval(1800))
 
