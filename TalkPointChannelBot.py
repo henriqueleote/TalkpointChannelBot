@@ -21,7 +21,7 @@ channel_id = "-1001921638321"
 watchlist = {}
 DATA_FILE = "watchlist.json"
 interval = 180
-isChecking = false
+isChecking = False
 
 # Function to get the most recent URL from the file
 def get_most_recent():
@@ -178,7 +178,7 @@ def addWatchlist(update, context):
     query = update.callback_query
     callback_data = query.data
 
-    if isChecking is false:
+    if isChecking is False:
         # Extract the product ID and price from the callback data
         product_id, pre_price = callback_data.split('_')
 
@@ -209,7 +209,7 @@ def get_updated_markup(product_id, price, button_text):
     return reply_markup
 
 def checkWatchlist(bot):
-    isChecking = true
+    isChecking = True
     toRemove = []
     load_watchlist()
     print(watchlist)
@@ -240,7 +240,7 @@ def checkWatchlist(bot):
     for val in toRemove:
         watchlist.pop(val)
         save_watchlist()
-    isChecking = false
+    isChecking = False
 
 def setInterval(val):
     interval = val
