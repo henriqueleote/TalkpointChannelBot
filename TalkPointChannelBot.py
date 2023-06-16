@@ -175,6 +175,7 @@ def sendToChannel(productID, product_name, product_price, image, bot, message):
 
 def addWatchlist(update, context):
     global watchlist
+    global isChecking
     query = update.callback_query
     callback_data = query.data
 
@@ -211,6 +212,7 @@ def get_updated_markup(product_id, price, button_text):
     return reply_markup
 
 def checkWatchlist(bot):
+    global isChecking
     isChecking = True
     toRemove = []
     load_watchlist()
