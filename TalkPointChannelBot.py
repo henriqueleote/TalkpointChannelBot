@@ -90,18 +90,21 @@ def getData(bot):
 
     found_recent = False
     val = []
-    for index, element in enumerate(ul_element):
-        if element['data-product-quickshop-url'] == most_recent:
-            found_recent = True
-            break
-        new_products.append(element)
+    if ul_element:
+        for index, element in enumerate(ul_element):
+            if element['data-product-quickshop-url'] == most_recent:
+                found_recent = True
+                break
+            new_products.append(element)
 
-        # Check if the loop has iterated 10 times without finding a match
-        if index == 9 and not found_recent:
-            val = new_products[:2]
+            # Check if the loop has iterated 10 times without finding a match
+            if index == 9 and not found_recent:
+                val = new_products[:2]
 
-    if(val):
-        new_products = val
+        if (val):
+            new_products = val
+    else:
+        print('Error: ul_element not found')
 
     # Find the most recent through the HTML <li> inside the <ul>
     if ul_element:
