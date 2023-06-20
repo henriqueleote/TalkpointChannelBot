@@ -13,8 +13,10 @@ from telegram.ext import Updater, CallbackQueryHandler
 # URL of the website you want to fetch
 URL_ALL = 'https://talk-point.de/search?type=article%2Cpage%2Cproduct&q=&sort=created-descending'
 URL_GRADE = 'https://talk-point.de/collections/all?sort=created-descending&pf_t_produktzustand=Zustand_A&pf_t_produktzustand=Zustand_B&pf_t_produktzustand=Zustand_C'
+URL_LAST = 'https://talk-point.de/collections/letzte-chance?sort=created-descending&page=1'
 most_recent = None
-MOST_RECENT_FILE = "most_recent.txt"
+MOST_RECENT_FILE_GRADE = "most_recent_grade.txt"
+MOST_RECENT_FILE_LAST = "most_recent_last.txt"
 history_product_count = 0
 TOKEN = '6201495078:AAGmPD9vEI_dIT1D4uAMbF2_9Rx3dOzc1Bg'
 channel_id = "-1001921638321"
@@ -24,16 +26,24 @@ interval = 180
 isChecking = False
 
 # Function to get the most recent URL from the file
-def get_most_recent():
+def get_most_recent(url):
+    if url is URL_GRADE:
+        FILE = MOST_RECENT_FILE_GRADE
+    else:
+        FILE = MOST_RECENT_FILE_LAST
     try:
-        with open(MOST_RECENT_FILE, 'r') as file:
+        with open(FILE, 'r') as file:
             return file.read().strip()
     except FileNotFoundError:
         return None
 
 # Function to set the most recent URL in the file
-def set_most_recent(value):
-    with open(MOST_RECENT_FILE, 'w') as file:
+def set_most_recent(value, url):
+    if url is URL_GRADE:
+        FILE = MOST_RECENT_FILE_GRADE
+    else:
+        FILE = MOST_RECENT_FILE_LAST
+    with open(FILE, 'w') as file:
         file.write(value)
 
 # Loads watchlist from JSON file
@@ -76,12 +86,12 @@ def runWebDriver(url):
 
 
 # Function to fetch data from the website and send updates to the Telegram channel
-def getData(bot):
+def getData(bot, url):
     print('running...')
-    most_recent = get_most_recent()
+    most_recent = get_most_recent(url)
 
     # Get internet code
-    soup = runWebDriver(URL_GRADE)
+    soup = runWebDriver(url)
     ul_element = soup.select_one('.boost-pfs-filter-products')
 
     new_products = []
@@ -121,7 +131,7 @@ def getData(bot):
                     product_name = product_li.find("h2", {"class", "productitem--title"}).text
                     sendToChannel(productID, product_name, product_price, image, bot, "")
                     time.sleep(2)
-                set_most_recent(new_products[0]['data-product-quickshop-url'])
+                set_most_recent(new_products[0]['data-product-quickshop-url'], url)
                 new_products.clear()
                 res.clear()
             else:
@@ -141,6 +151,9 @@ def sendToChannel(productID, product_name, product_price, image, bot, message):
     else:
         img_src = pre_img_src
 
+    if (grade == "0"):
+        condition_emoji = "\U0001F7E2"
+        condition = "New"
     if (grade == "223"):
         condition_emoji = "\U0001F7E2"
         condition = "Like new"
@@ -271,7 +284,9 @@ schedule.every().day.at("18:30").do(lambda: setInterval(1800))
 
 while True:
     schedule.run_pending()
-    getData(updater.bot)
+    getData(updater.bot, URL_GRADE)
+    time.sleep(10)
+    getData(updater.bot, URL_LAST)
     time.sleep(interval)
 
 updater.stop()
