@@ -144,6 +144,8 @@ def sendToChannel(productID, product_name, product_price, image, bot, message):
     img_src = ''
 
     grade = productID[-3:]
+    grade_string = productID.rsplit('-', 1)
+    grade = str(grade_string[1])
 
     pre_img_src = image.get('src')
     if pre_img_src[0] == "/":
