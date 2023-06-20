@@ -156,13 +156,13 @@ def sendToChannel(productID, product_name, product_price, image, bot, message):
         condition_emoji = "\U0001F7E2"
         condition = "New"
     if (grade == "223"):
-        condition_emoji = "\U0001F7E2"
+        condition_emoji = "\U0001F7E1"
         condition = "Like new"
     if (grade == "224"):
-        condition_emoji = "\U0001F7E1"
+        condition_emoji = "\U0001F7E0"
         condition = "Very good"
     if (grade == "225"):
-        condition_emoji = "\U0001F7E0"
+        condition_emoji = "\U0001F534"
         condition = "Good"
 
     blue_circle = "\U0001F535"
@@ -286,7 +286,7 @@ schedule.every().day.at("18:30").do(lambda: setInterval(1800))
 while True:
     schedule.run_pending()
     getData(updater.bot, URL_GRADE)
-    time.sleep(10)
+    time.sleep(3)
     getData(updater.bot, URL_LAST)
     time.sleep(interval)
 
