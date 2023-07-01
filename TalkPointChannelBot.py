@@ -9,6 +9,7 @@ from selenium import webdriver
 import telegram
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CallbackQueryHandler
+import config
 
 # URL of the website you want to fetch
 URL_ALL = 'https://talk-point.de/search?type=article%2Cpage%2Cproduct&q=&sort=created-descending'
@@ -18,8 +19,8 @@ most_recent = None
 MOST_RECENT_FILE_GRADE = "most_recent_grade.txt"
 MOST_RECENT_FILE_LAST = "most_recent_last.txt"
 history_product_count = 0
-TOKEN = '6201495078:AAGmPD9vEI_dIT1D4uAMbF2_9Rx3dOzc1Bg'
-channel_id = "-1001921638321"
+TOKEN = config.TOKEN
+channel_id = config.channel_id
 watchlist = {}
 DATA_FILE = "watchlist.json"
 interval = 180
@@ -182,8 +183,6 @@ def sendToChannel(productID, product_name, product_price, image, bot, message):
         keyboard = [[InlineKeyboardButton(button_text, callback_data=f'{productID}_{product_price}')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        #TODO Check
-        #ORANGE IPHONE CASE WAS GIVING PROBLEMS
         bot.send_photo(chat_id=channel_id, photo=img_src, caption=message, reply_markup=reply_markup)
         time.sleep(2)
     else:
@@ -272,7 +271,6 @@ updater = Updater(token=TOKEN)
 dispatcher = updater.dispatcher
 
 load_watchlist()
-#updater.bot.send_message(chat_id=channel_id, text='Now getting updates from Talkpoint')
 
 # Add a callback query handler for button clicks
 dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
