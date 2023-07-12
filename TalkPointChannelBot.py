@@ -81,8 +81,8 @@ def runWebDriver(url):
 
     # Create the WebDriver instance
     driver.get(url)
-    driver.quit()
     soup = BeautifulSoup(driver.page_source, 'html.parser')
+    driver.quit()
     return soup
 
 
@@ -217,7 +217,7 @@ def checkWatchlist(bot):
                 toRemove.append(product_id)
                 graph_emoji = '\U0001f4c9'
                 dropValue = ((old_price - new_price) / old_price) * 100
-                message = f"\n{graph_emoji} Price drop by {dropValue}% {graph_emoji}"
+                message = f"\n{graph_emoji} Price drop of {int(dropValue)}% {graph_emoji}"
                 sendToChannel(product_id, product_name, new_price, image, bot, message)
                 time.sleep(2)
         else:
