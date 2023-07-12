@@ -2,7 +2,7 @@ import datetime
 import json
 import re
 import time
-
+import datetime
 import schedule as schedule
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -67,7 +67,7 @@ def save_watchlist():
     with open(DATA_FILE, 'w') as file:
         if watchlist:
             json.dump(watchlist, file)
-            print("saved to file")
+            print(f"saved to file at {datetime.datetime.now()}")
         else:
             file.write('')
 
@@ -78,11 +78,11 @@ def runWebDriver(url):
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
     driver = webdriver.Chrome(options=chrome_options)
+
     # Create the WebDriver instance
     driver.get(url)
-    html_content = driver.page_source
     driver.quit()
-    soup = BeautifulSoup(html_content, 'html.parser')
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
     return soup
 
 
@@ -91,103 +91,79 @@ def getData(bot, url):
     print('running...')
     most_recent = get_most_recent(url)
 
-    # Get internet code
+    # Get page source code
     soup = runWebDriver(url)
     ul_element = soup.select_one('.boost-pfs-filter-products')
 
     new_products = []
-
-    # Check how many products were added since the last "most_recent" until the newest
-
-    found_recent = False
-    val = []
-    if ul_element:
-        for index, element in enumerate(ul_element):
-            if element['data-product-quickshop-url'] == most_recent:
-                found_recent = True
-                break
-            new_products.append(element)
-
-            # Check if the loop has iterated 10 times without finding a match
-            if index == 9 and not found_recent:
-                val = new_products[:2]
-
-        if (val):
-            new_products = val
-    else:
-        print('Error: ul_element not found')
+    existing_product = False
 
     # Find the most recent through the HTML <li> inside the <ul>
     if ul_element:
-        li_element = ul_element.find('li')
-        if li_element:
-            if new_products:
-                res = new_products[::-1]  # reversing using list slicing
-                for product_li in res:
+        for index, element in enumerate(ul_element):
+            if element['data-product-quickshop-url'] == most_recent:
+                existing_product = True
+                break
+            new_products.append(element)
 
-                    product_item = product_li['data-product-quickshop-url']
-                    image = product_li.find('img', 'productitem--image-primary')
-                    productID = product_item.split('/')[4]
-                    product_price = product_li.find("span", {"class", "money"}).text
-                    product_name = product_li.find("h2", {"class", "productitem--title"}).text
-                    sendToChannel(productID, product_name, product_price, image, bot, "")
-                    time.sleep(2)
-                set_most_recent(new_products[0]['data-product-quickshop-url'], url)
-                new_products.clear()
-                res.clear()
-            else:
-                print('no product')
+            # If didn't find a match after 10 runs, only uses the first 2 results
+            if index == 9 and not existing_product:
+                new_products = new_products[:2]
+                break
+
+        if new_products:
+            for product_li in new_products[::-1]: # looping the reversed list
+                product_item = product_li['data-product-quickshop-url']
+                image = product_li.find('img', 'productitem--image-primary').get('src')
+                productID = product_item.split('/')[4]
+                product_price = product_li.find("span", {"class", "money"}).text
+                product_name = product_li.find("h2", {"class", "productitem--title"}).text
+                sendToChannel(productID, product_name, product_price, image, bot, "")
+                time.sleep(2)
+            set_most_recent(new_products[::-1][0]['data-product-quickshop-url'], url)
+            new_products.clear()
+        else:
+            print('no product')
+
     else:
         print('Error: ul_element not found')
 
 
 def sendToChannel(productID, product_name, product_price, image, bot, message):
-    img_src = ''
 
     grade_string = productID.rsplit('-', 1)
     grade = str(grade_string[1])
 
-    pre_img_src = image.get('src')
-    if pre_img_src[0] == "/":
-        img_src = pre_img_src[2:]
+    if image[0] == "/":
+        img_src = image[2:]
     else:
-        img_src = pre_img_src
+        img_src = image
 
     if (grade == "0"):
-        condition_emoji = "\U0001F7E2"
-        condition = "New"
+        condition = "\U0001F7E2 New"
     if (grade == "223"):
-        condition_emoji = "\U0001F7E1"
-        condition = "Like new"
+        condition = "\U0001F7E1 Like new"
     if (grade == "224"):
-        condition_emoji = "\U0001F7E0"
-        condition = "Very good"
+        condition = "\U0001F7E0 Very good"
     if (grade == "225"):
-        condition_emoji = "\U0001F534"
-        condition = "Good"
+        condition = "\U0001F534 Good"
 
     blue_circle = "\U0001F535"
     white_circle = "\u26AA"
-    if(message):
-        title = f'{blue_circle}{white_circle} Talkpoint {white_circle}{blue_circle}{message}'
-    else:
-        title = f'{blue_circle}{white_circle} Talkpoint {white_circle}{blue_circle}\n'
-    message = f'{title}{product_name}\nPrice: {product_price}\nCondition: {condition} {condition_emoji}\nhttps://talk-point.de/products/' + productID
-    if (img_src != ''):
 
-        # Send the photo with the button to the channel
-        plus_emoji = '\u2795'
-        button_text = f'{plus_emoji} Add to watchlist!'
+    title = f'{blue_circle}{white_circle} Talkpoint {white_circle}{blue_circle}{message}\n'
+    message = f'{title}{product_name}\nPrice: {product_price}\nCondition: {condition}\nhttps://talk-point.de/products/' + productID
 
-        # Create the inline keyboard markup
-        keyboard = [[InlineKeyboardButton(button_text, callback_data=f'{productID}_{product_price}')]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
+    # Add the watchlist button to the chat message
+    markup = [[InlineKeyboardButton(f'\u2795 Add to watchlist!', callback_data=f'{productID}_{product_price}')]]
+    reply_markup = InlineKeyboardMarkup(markup)
 
+    if (img_src):
         bot.send_photo(chat_id=channel_id, photo=img_src, caption=message, reply_markup=reply_markup)
-        time.sleep(2)
     else:
         bot.send_message(chat_id=channel_id, text=message)
-        time.sleep(2)
+    time.sleep(2)
+
 
 def addWatchlist(update, context):
     global watchlist
@@ -199,21 +175,16 @@ def addWatchlist(update, context):
         # Extract the product ID and price from the callback data
         product_id, pre_price = callback_data.split('_')
 
-        cleaned_string = pre_price.replace("€", "").replace(",", ".")
-        price = float(cleaned_string)
-
         # Check if the product is already in the watchlist
         if product_id in watchlist:
             watchlist.pop(product_id)
-            emoji = '\u2795'
-            button_text = f'{emoji} Add to watchlist!'
+            button_text = f'\u2795 Add to watchlist!'
         else:
             watchlist[product_id] = {
                 'productID' : product_id,
-                'price' : price
+                'price' : float(pre_price.replace("€", "").replace(",", "."))
             }
-            emoji = '\u2705'
-            button_text = f'{emoji} Added to Watchlist'
+            button_text = f'\u2705 Added to watchlist!'
 
         query.edit_message_reply_markup(reply_markup=get_updated_markup(product_id, pre_price + ' €', button_text))
         save_watchlist()
@@ -222,10 +193,7 @@ def addWatchlist(update, context):
 
 # Function to get the updated reply markup with the modified button text
 def get_updated_markup(product_id, price, button_text):
-    callback_data = f"{product_id}_{price}"
-    button = InlineKeyboardButton(button_text, callback_data=callback_data)
-    reply_markup = InlineKeyboardMarkup([[button]])
-    return reply_markup
+    return InlineKeyboardMarkup([[InlineKeyboardButton(button_text, callback_data=f"{product_id}_{price}")]])
 
 def checkWatchlist(bot):
     global isChecking
@@ -241,14 +209,15 @@ def checkWatchlist(bot):
         span_element = soup.select_one('div.price--main')
         if span_element:
             price_element = span_element.find("span", {"class":"money"}).contents
-            image = soup.find('img', 'product-gallery--loaded-image')
+            image = soup.find('img', 'product-gallery--loaded-image').get('src')
             product_name = soup.select_one('h1.product-title').contents[0].replace("\n","").strip()
             new_price = float(price_element[0].replace("\n","").replace(" ","").replace("€","").replace(",","."))
 
             if(new_price < old_price):
                 toRemove.append(product_id)
                 graph_emoji = '\U0001f4c9'
-                message = f"\n{graph_emoji} Price drop {graph_emoji}\n"
+                dropValue = ((old_price - new_price) / old_price) * 100
+                message = f"\n{graph_emoji} Price drop by {dropValue}% {graph_emoji}"
                 sendToChannel(product_id, product_name, new_price, image, bot, message)
                 time.sleep(2)
         else:
@@ -262,10 +231,6 @@ def checkWatchlist(bot):
     bot.send_message(chat_id=channel_id, text='Checking watchlist finished')
     isChecking = False
 
-def setInterval(val):
-    interval = val
-    print(f"Now running every {interval} seconds.")
-
 
 updater = Updater(token=TOKEN)
 dispatcher = updater.dispatcher
@@ -278,8 +243,6 @@ dispatcher.add_handler(CallbackQueryHandler(addWatchlist))
 updater.start_polling()
 
 schedule.every().day.at("13:00").do(lambda: checkWatchlist(updater.bot))
-schedule.every().day.at("07:30").do(lambda: setInterval(180))
-schedule.every().day.at("18:30").do(lambda: setInterval(1800))
 
 while True:
     schedule.run_pending()
