@@ -112,7 +112,8 @@ def getData(bot, url):
                 break
 
         if new_products:
-            for product_li in new_products[::-1]: # looping the reversed list
+            new_list = new_products[::-1]  # reversing using list slicing
+            for product_li in new_list: # looping the reversed list
                 product_item = product_li['data-product-quickshop-url']
                 image = product_li.find('img', 'productitem--image-primary').get('src')
                 productID = product_item.split('/')[4]
@@ -120,8 +121,9 @@ def getData(bot, url):
                 product_name = product_li.find("h2", {"class", "productitem--title"}).text
                 sendToChannel(productID, product_name, product_price, image, bot, "")
                 time.sleep(2)
-            set_most_recent(new_products[::-1][0]['data-product-quickshop-url'], url)
+            set_most_recent(new_list[0]['data-product-quickshop-url'], url)
             new_products.clear()
+            new_list.clear()
         else:
             print('no product')
 
