@@ -19,8 +19,8 @@ most_recent = None
 MOST_RECENT_FILE_GRADE = "most_recent_grade.txt"
 MOST_RECENT_FILE_LAST = "most_recent_last.txt"
 history_product_count = 0
-TOKEN = config.TOKEN
-channel_id = config.channel_id
+TOKEN = 1#config.TOKEN
+channel_id = 1#config.channel_id
 watchlist = {}
 DATA_FILE = "watchlist.json"
 interval = 180
@@ -89,82 +89,53 @@ def runWebDriver(url):
 # Function to fetch data from the website and send updates to the Telegram channel
 def getData(bot, url):
     print('running...')
-    most_recent = get_most_recent(url)
 
     # Get page source code
     soup = runWebDriver(url)
     ul_element = soup.select_one('.boost-pfs-filter-products')
 
-    new_products = []
-    existing_product = False
-
-    # Find the most recent through the HTML <li> inside the <ul>
     if ul_element:
-        for index, element in enumerate(ul_element):
-            if element['data-product-quickshop-url'] == most_recent:
-                existing_product = True
+        recent = ""
+        for i, product_li in enumerate(ul_element, start=1):
+            product_item = product_li['data-product-quickshop-url']
+            if i == 1:
+                recent = product_item
+            if product_item == get_most_recent(url) or i == 10:
                 break
-            new_products.append(element)
-
-            # If didn't find a match after 10 runs, only uses the first 2 results
-            if index == 9 and not existing_product:
-                new_products = new_products[:2]
-                break
-
-        if new_products:
-            new_list = new_products[::-1]  # reversing using list slicing
-            for product_li in new_list: # looping the reversed list
-                product_item = product_li['data-product-quickshop-url']
-                image = product_li.find('img', 'productitem--image-primary').get('src')
-                productID = product_item.split('/')[4]
-                product_price = product_li.find("span", {"class", "money"}).text
-                product_name = product_li.find("h2", {"class", "productitem--title"}).text
-                sendToChannel(productID, product_name, product_price, image, bot, "")
-                time.sleep(2)
-            set_most_recent(new_list[0]['data-product-quickshop-url'], url)
-            new_products.clear()
-            new_list.clear()
-        else:
-            print('no product')
-
+            image = product_li.select_one('.productitem--image-primary')['src']
+            productID = product_item.split('/')[4]
+            product_price = product_li.select_one('span.money').text
+            product_name = product_li.select_one('h2.productitem--title').text
+            sendToChannel(productID, product_name, product_price, image, bot, "")
+            time.sleep(2)
+        set_most_recent(recent, url)
+        print("no more products")
     else:
         print('Error: ul_element not found')
 
 
 def sendToChannel(productID, product_name, product_price, image, bot, message):
+    grade_conditions = {
+        "0": "\U0001F7E2 New",
+        "223": "\U0001F7E1 Like new",
+        "224": "\U0001F7E0 Very good",
+        "225": "\U0001F534 Good"
+    }
 
-    grade_string = productID.rsplit('-', 1)
-    grade = str(grade_string[1])
+    grade = productID.rsplit('-', 1)[-1]
+    condition = grade_conditions.get(grade, "")
 
-    if image[0] == "/":
-        img_src = image[2:]
-    else:
-        img_src = image
-
-    if (grade == "0"):
-        condition = "\U0001F7E2 New"
-    if (grade == "223"):
-        condition = "\U0001F7E1 Like new"
-    if (grade == "224"):
-        condition = "\U0001F7E0 Very good"
-    if (grade == "225"):
-        condition = "\U0001F534 Good"
-
-    blue_circle = "\U0001F535"
-    white_circle = "\u26AA"
-
-    title = f'{blue_circle}{white_circle} Talkpoint {white_circle}{blue_circle}{message}\n'
-    message = f'{title}{product_name}\nPrice: {product_price}\nCondition: {condition}\nhttps://talk-point.de/products/' + productID
+    title = f'\U0001F535\u26AA Talkpoint \u26AA\U0001F535{message}\n'
+    message = f'{title}{product_name}\nPrice: {product_price}\nCondition: {condition}\nhttps://talk-point.de/products/{productID}'
 
     # Add the watchlist button to the chat message
-    markup = [[InlineKeyboardButton(f'\u2795 Add to watchlist!', callback_data=f'{productID}_{product_price}')]]
+    markup = [[InlineKeyboardButton('\u2795 Add to watchlist!', callback_data=f'{productID}_{product_price}')]]
     reply_markup = InlineKeyboardMarkup(markup)
 
-    if (img_src):
-        bot.send_photo(chat_id=channel_id, photo=img_src, caption=message, reply_markup=reply_markup)
+    if image:
+        bot.send_photo(chat_id=channel_id, photo=image, caption=message, reply_markup=reply_markup)
     else:
         bot.send_message(chat_id=channel_id, text=message)
-    time.sleep(2)
 
 
 def addWatchlist(update, context):
@@ -248,7 +219,7 @@ schedule.every().day.at("13:00").do(lambda: checkWatchlist(updater.bot))
 
 while True:
     schedule.run_pending()
-    getData(updater.bot, URL_GRADE)
+    getData(1, URL_GRADE)
     time.sleep(3)
     getData(updater.bot, URL_LAST)
     time.sleep(interval)
