@@ -19,8 +19,8 @@ most_recent = None
 MOST_RECENT_FILE_GRADE = "most_recent_grade.txt"
 MOST_RECENT_FILE_LAST = "most_recent_last.txt"
 history_product_count = 0
-TOKEN = 1#config.TOKEN
-channel_id = 1#config.channel_id
+TOKEN = config.TOKEN
+channel_id = config.channel_id
 watchlist = {}
 DATA_FILE = "watchlist.json"
 interval = 180
@@ -219,7 +219,7 @@ schedule.every().day.at("13:00").do(lambda: checkWatchlist(updater.bot))
 
 while True:
     schedule.run_pending()
-    getData(1, URL_GRADE)
+    getData(updater.bot, URL_GRADE)
     time.sleep(3)
     getData(updater.bot, URL_LAST)
     time.sleep(interval)
