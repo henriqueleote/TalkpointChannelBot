@@ -107,7 +107,6 @@ def getData(bot, url):
             product_price = product_li.select_one('span.money').text
             product_name = product_li.select_one('h2.productitem--title').text
             sendToChannel(productID, product_name, product_price, image, bot, "")
-            time.sleep(2)
         set_most_recent(recent, url)
         print("no more products")
     else:
@@ -122,8 +121,7 @@ def sendToChannel(productID, product_name, product_price, image, bot, message):
         "225": "\U0001F534 Good"
     }
 
-    grade = productID.rsplit('-', 1)[-1]
-    condition = grade_conditions.get(grade, "")
+    condition = grade_conditions.get(productID.rsplit('-', 1)[-1], "")
 
     title = f'\U0001F535\u26AA Talkpoint \u26AA\U0001F535{message}\n'
     message = f'{title}{product_name}\nPrice: {product_price}\nCondition: {condition}\nhttps://talk-point.de/products/{productID}'
@@ -132,10 +130,12 @@ def sendToChannel(productID, product_name, product_price, image, bot, message):
     markup = [[InlineKeyboardButton('\u2795 Add to watchlist!', callback_data=f'{productID}_{product_price}')]]
     reply_markup = InlineKeyboardMarkup(markup)
 
-    if image:
+    try:
         bot.send_photo(chat_id=channel_id, photo=image, caption=message, reply_markup=reply_markup)
-    else:
-        bot.send_message(chat_id=channel_id, text=message)
+    except telegram.error.RetryAfter as e:
+        time.sleep(e.retry_after)  # Wait for the specified duration
+        # Retry after the waiting period
+        bot.send_photo(chat_id=channel_id, photo=image, caption=message, reply_markup=reply_markup)
 
 
 def addWatchlist(update, context):
@@ -192,7 +192,6 @@ def checkWatchlist(bot):
                 dropValue = ((old_price - new_price) / old_price) * 100
                 message = f"\n{graph_emoji} Price drop of {int(dropValue)}% {graph_emoji}"
                 sendToChannel(product_id, product_name, new_price, image, bot, message)
-                time.sleep(2)
         else:
             # Product doesnt exist anymore
             toRemove.append(product_id)
@@ -220,7 +219,6 @@ schedule.every().day.at("13:00").do(lambda: checkWatchlist(updater.bot))
 while True:
     schedule.run_pending()
     getData(updater.bot, URL_GRADE)
-    time.sleep(3)
     getData(updater.bot, URL_LAST)
     time.sleep(interval)
 
