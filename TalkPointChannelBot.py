@@ -102,7 +102,10 @@ def getData(bot, url):
                 recent = product_item
             if product_item == get_most_recent(url) or i == 10:
                 break
-            image = product_li.select_one('.productitem--image-primary')['src']
+            imagesrc = product_li.select_one('.productitem--image-primary')['src']
+            if imagesrc.startswith("//"):
+                image = imagesrc[2:]  # Remove the first two characters
+            else: image = imagesrc
             productID = product_item.split('/')[4]
             product_price = product_li.select_one('span.money').text
             product_name = product_li.select_one('h2.productitem--title').text
@@ -173,7 +176,7 @@ def checkWatchlist(bot):
     isChecking = True
     toRemove = []
     load_watchlist()
-    bot.send_message(chat_id=channel_id, text='Checking watchlist')
+    bot.send_message(chat_id=channel_id, text='Checking watchlist', disable_notification=True)
     for key, value in watchlist.items():
         product_id = value["productID"]
         old_price = value["price"]
@@ -182,7 +185,10 @@ def checkWatchlist(bot):
         span_element = soup.select_one('div.price--main')
         if span_element:
             price_element = span_element.find("span", {"class":"money"}).contents
-            image = soup.find('img', 'product-gallery--loaded-image').get('src')
+            imagesrc = soup.find('img', 'product-gallery--loaded-image').get('src')
+            if imagesrc.startswith("//"):
+                image = imagesrc[2:]  # Remove the first two characters
+            else: image = imagesrc
             product_name = soup.select_one('h1.product-title').contents[0].replace("\n","").strip()
             new_price = float(price_element[0].replace("\n","").replace(" ","").replace("€","").replace(",","."))
 
@@ -190,7 +196,7 @@ def checkWatchlist(bot):
                 toRemove.append(product_id)
                 graph_emoji = '\U0001f4c9'
                 dropValue = ((old_price - new_price) / old_price) * 100
-                message = f"\n{graph_emoji} Price drop of {int(dropValue)}% {graph_emoji}"
+                message = f"\n{graph_emoji} Price drop of {dropValue:.1f}% {graph_emoji}"
                 sendToChannel(product_id, product_name, new_price, image, bot, message)
         else:
             # Product doesnt exist anymore
@@ -200,7 +206,7 @@ def checkWatchlist(bot):
     for val in toRemove:
         watchlist.pop(val)
         save_watchlist()
-    bot.send_message(chat_id=channel_id, text='Checking watchlist finished')
+    bot.send_message(chat_id=channel_id, text='Checking watchlist finished', disable_notification=True)
     isChecking = False
 
 
