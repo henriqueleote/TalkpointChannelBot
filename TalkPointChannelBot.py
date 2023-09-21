@@ -14,7 +14,7 @@ import config
 # URL of the website you want to fetch
 URL_ALL = 'https://talk-point.de/search?type=article%2Cpage%2Cproduct&q=&sort=created-descending'
 URL_GRADE = 'https://talk-point.de/collections/all?sort=created-descending&pf_t_produktzustand=Zustand_A&pf_t_produktzustand=Zustand_B&pf_t_produktzustand=Zustand_C'
-URL_LAST = 'https://talk-point.de/search?type=article%2Cpage%2Cproduct&q=&sort=created-descending'
+URL_LAST = 'https://talk-point.de/collections/unsere-beste-b-ware?sort=created-descending'
 most_recent = None
 MOST_RECENT_FILE_GRADE = "most_recent_grade.txt"
 MOST_RECENT_FILE_LAST = "most_recent_last.txt"
