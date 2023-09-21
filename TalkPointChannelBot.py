@@ -12,12 +12,9 @@ from telegram.ext import Updater, CallbackQueryHandler
 import config
 
 # URL of the website you want to fetch
-URL_ALL = 'https://talk-point.de/search?type=article%2Cpage%2Cproduct&q=&sort=created-descending'
-URL_GRADE = 'https://talk-point.de/collections/all?sort=created-descending&pf_t_produktzustand=Zustand_A&pf_t_produktzustand=Zustand_B&pf_t_produktzustand=Zustand_C'
-URL_LAST = 'https://talk-point.de/collections/unsere-beste-b-ware?sort=created-descending'
+URL = 'https://talk-point.de/collections/unsere-beste-b-ware?sort=created-descending'
 most_recent = None
-MOST_RECENT_FILE_GRADE = "most_recent_grade.txt"
-MOST_RECENT_FILE_LAST = "most_recent_last.txt"
+MOST_RECENT_FILE = "most_recent.txt"
 history_product_count = 0
 TOKEN = config.TOKEN
 channel_id = config.channel_id
@@ -28,23 +25,15 @@ isChecking = False
 
 # Function to get the most recent URL from the file
 def get_most_recent(url):
-    if url is URL_GRADE:
-        FILE = MOST_RECENT_FILE_GRADE
-    else:
-        FILE = MOST_RECENT_FILE_LAST
     try:
-        with open(FILE, 'r') as file:
+        with open(MOST_RECENT_FILE, 'r') as file:
             return file.read().strip()
     except FileNotFoundError:
         return None
 
 # Function to set the most recent URL in the file
-def set_most_recent(value, url):
-    if url is URL_GRADE:
-        FILE = MOST_RECENT_FILE_GRADE
-    else:
-        FILE = MOST_RECENT_FILE_LAST
-    with open(FILE, 'w') as file:
+def set_most_recent(value):
+    with open(MOST_RECENT_FILE, 'w') as file:
         file.write(value)
 
 # Loads watchlist from JSON file
@@ -110,7 +99,7 @@ def getData(bot, url):
             product_price = product_li.select_one('span.money').text
             product_name = product_li.select_one('h2.productitem--title').text
             sendToChannel(productID, product_name, product_price, image, bot, "")
-        set_most_recent(recent, url)
+        set_most_recent(recent)
         print("no more products")
     else:
         print('Error: ul_element not found')
@@ -224,8 +213,7 @@ schedule.every().day.at("13:00").do(lambda: checkWatchlist(updater.bot))
 
 while True:
     schedule.run_pending()
-    getData(updater.bot, URL_GRADE)
-    getData(updater.bot, URL_LAST)
+    getData(updater.bot, URL)
     time.sleep(interval)
 
 updater.stop()
