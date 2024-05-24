@@ -1,1 +1,1 @@
-py TalkPointChannelBot.py
+py bot.py
