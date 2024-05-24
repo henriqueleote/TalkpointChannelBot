@@ -4,11 +4,11 @@ This script fetches the latest product updates from Talk-point and sends them to
 
 ## Requirements
 
-- Python 3.x
+- Beautifulsoup4
+- Python-telegram-bot
 - Selenium
-- BeautifulSoup
-- Chrome WebDriver
-- Telegram Bot API token
+- Selenium stealth
+- Webdriver manager
 
 ## Features
 - Checks website every # minutes for new products
@@ -40,14 +40,13 @@ pip install -r requirements.txt
 1. Run the script:
 
 ```python
-py TalkpointChannelBot.py
+py bot.py
 ```
 
 2. The script will continuously fetch the latest product updates from Talk-point.de and send them to the configured Telegram channel. It will check for new products since the last run.
 
 ## Customization
 
-- Modify the `URL_ALL` and `URL_GRADE` variables in the script to fetch data from different URLs on the Talk-point website.
 - Adjust the sleep duration in the `time.sleep()` function to control the interval between each data fetch.
 
 ## Contributing
