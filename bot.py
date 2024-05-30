@@ -97,6 +97,7 @@ async def sendToChannel(productID, product_name, product_price, productImage, me
         "225": "\U0001F534 Good"
     }
 
+    productImage = 'https://' + productImage.split("?")[0]
     condition = grade_conditions.get(productID.rsplit('-', 1)[-1], "")
 
     title = f'\U0001F535\u26AA Talkpoint \u26AA\U0001F535{message}\n'
