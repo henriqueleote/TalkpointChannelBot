@@ -6,9 +6,7 @@ This script fetches the latest product updates from Talk-point and sends them to
 
 - Beautifulsoup4
 - Python-telegram-bot
-- Selenium
-- Selenium stealth
-- Webdriver manager
+- PyCurl
 
 ## Features
 - Checks website every # minutes for new products
