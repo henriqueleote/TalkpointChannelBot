@@ -7,33 +7,15 @@ from telegram.error import BadRequest, RetryAfter, TimedOut, NetworkError
 import talkpoint_config
 import asyncio
 
+list = []
+
 # bool to control if messages are sent to telegram or not
 sendMessage = True
-
-# URL of the website you want to fetch
-most_recent = None
-MOST_RECENT_FILE = "most_recent.txt"
-isChecking = False
-
-# Telegram Bot Token
-TOKEN = talkpoint_config.TOKEN
 
 # Telegram Channel ID
 channel_id = talkpoint_config.channel_id
 
-# Function to get the most recent URL from the file
-def get_most_recent():
-    try:
-        with open(MOST_RECENT_FILE, 'r') as file:
-            return file.read().strip()
-    except FileNotFoundError:
-        return None
-
-# Function to set the most recent URL in the file
-def set_most_recent(value):
-    with open(MOST_RECENT_FILE, 'w') as file:
-        file.write(value)
-
+iteration = 0
 
 # Function to run the WebDriver and retrieve the HTML content of the page
 def getWebContent(url):
@@ -54,10 +36,9 @@ def getWebContent(url):
 
     return soup
 
+
 # Function to fetch data from the website and send updates to the Telegram channel
 async def getData(url):
-    print('Running talkpoint.de...')
-
     # Get page source code
     soup = getWebContent(url)
 
@@ -67,29 +48,26 @@ async def getData(url):
     ul_element = soup.select_one('ul.boost-pfs-filter-products')
 
     if ul_element:
-        recent = ""
-
-        for i, product_li in enumerate(ul_element.select('.productgrid--item'), start=1):
+        for product_li in ul_element.select('.productgrid--item')[::-1]:
             product_item = product_li['data-product-quickshop-url']
-            if i == 1:
-                recent = product_item
-            if product_item == get_most_recent() or i == 10:
-                break
             imagesrc = product_li.select_one('.productitem--image-primary')['src']
             if imagesrc.startswith("//"):
-                image = imagesrc[2:]  # Remove the first two characters
-            else: image = imagesrc
+                productImage = imagesrc[2:]  # Remove the first two characters
+            else:
+                productImage = imagesrc
             productID = product_item.split('/')[4]
-            product_price = product_li.select_one('span.money').text.strip()
-            product_name = product_li.select_one('h2.productitem--title').text.strip()
-            await sendToChannel(productID, product_name, product_price, image, "")
-        set_most_recent(recent)
-        print("no more products")
+            productPrice = product_li.select_one('span.money').text.strip()
+            productName = product_li.select_one('h2.productitem--title').text.strip()
+
+            if (productID not in list):
+                list.append(productID)
+                print(f'new product -> {productPrice} | {productName}')
+                await sendToChannel(productID, productName, productPrice, productImage, "")
     else:
         return
 
 
-async def sendToChannel(productID, product_name, product_price, productImage, message):
+async def sendToChannel(productID, productName, productPrice, productImage, message):
     grade_conditions = {
         "0": "\U0001F7E2 New",
         "223": "\U0001F7E1 Like new",
@@ -101,9 +79,9 @@ async def sendToChannel(productID, product_name, product_price, productImage, me
     condition = grade_conditions.get(productID.rsplit('-', 1)[-1], "")
 
     title = f'\U0001F535\u26AA Talkpoint \u26AA\U0001F535{message}\n'
-    message = f'{title}{product_name}\nPrice: {product_price}\nCondition: {condition}\nhttps://talk-point.de/products/{productID}'
+    message = f'{title}{productName}\nPrice: {productPrice}\nCondition: {condition}\nhttps://talk-point.de/products/{productID}'
 
-    if(sendMessage):
+    if sendMessage and iteration > 0:
         try:
             async with bot:
                 await bot.send_photo(chat_id=channel_id, photo=productImage, caption=message)
@@ -126,20 +104,24 @@ async def sendToChannel(productID, product_name, product_price, productImage, me
             time.sleep(1)
             async with bot:
                 await bot.send_photo(chat_id=channel_id, photo=productImage, caption=message)
-    else:
-        print(message)
 
 
 bot = telegram.Bot(token=talkpoint_config.TOKEN)
 
 # Define the main function
 async def main():
+    global iteration
     while True:
+        print('Running talkpoint.de...')
         result = await getData('https://talk-point.de/collections/unsere-beste-b-ware?sort=created-descending')
         if result == 'CRASH':
-            await bot.send_message(chat_id=channel_id, text='TalkPoint crashed due to failed link', disable_notification=True)
+            await bot.send_message(chat_id=channel_id, text='TalkPoint crashed due to failed link',
+                                   disable_notification=True)
             print("Script didn't load correctly the Talkpoint link")
             return
+        print(f'last product -> {list[len(list)-1]}')
+        await bot.send_message(chat_id=talkpoint_config.status_channel_id, text=f'Last talk product -> {list[len(list) - 1]}', disable_notification=True)
+        iteration += 1
         time.sleep(180)
 
 
