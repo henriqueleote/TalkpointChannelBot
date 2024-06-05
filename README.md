@@ -10,7 +10,6 @@ This script fetches the latest product updates from Talk-point and sends them to
 
 ## Features
 - Checks website every # minutes for new products
-- Has a favorite checklist that can be changed within telegram that is checked everyday at a certain hour to see if a product price has dropped
 
 ## Installation
 
@@ -27,11 +26,9 @@ cd TalkpointChannelBot
 pip install -r requirements.txt
 ```
 
-3. Download the Chrome WebDriver and place it in the project directory. Make sure the WebDriver version matches your Chrome browser version.
+3. Obtain a Telegram Bot API token by creating a bot through the BotFather.
 
-4. Obtain a Telegram Bot API token by creating a bot through the BotFather. Copy the token for later use.
-
-5. Update the `TOKEN` variable in the script with your Telegram Bot API token.
+4. Update the `TOKEN` variable in the script with your Telegram Bot API token.
    
 ## Usage
 
