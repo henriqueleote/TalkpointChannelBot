@@ -50,7 +50,12 @@ async def getData(url):
     if ul_element:
         for product_li in ul_element.select('.productgrid--item')[::-1]:
             product_item = product_li['data-product-quickshop-url']
-            imagesrc = product_li.select_one('.productitem--image-primary')['src']
+            try:
+                imagesrc = product_li.select_one('.productitem--image-primary')['src']
+            except TypeError:
+                print("Image non existing for product")
+                imagesrc = 'https://talk-point.de/cdn/shop/t/5/assets/boost-pfs-no-image_512x.gif'
+
             if imagesrc.startswith("//"):
                 productImage = imagesrc[2:]  # Remove the first two characters
             else:
