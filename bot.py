@@ -125,8 +125,16 @@ async def main():
             print("Script didn't load correctly the Talkpoint link")
             return
         print(f'last product -> {list[len(list)-1]}')
-        async with bot:
-            await bot.send_message(chat_id=talkpoint_config.status_channel_id, text=f'Last talk product -> {list[len(list) - 1]}', disable_notification=True)
+        try:
+            async with bot:
+                await bot.send_message(chat_id=talkpoint_config.status_channel_id,
+                                       text=f'Last talk product -> {list[len(list) - 1]}', disable_notification=True)
+        except TimedOut as e:
+            time.sleep(60)
+            async with bot:
+                await bot.send_message(chat_id=talkpoint_config.status_channel_id,
+                                       text=f'Last talk product -> {list[len(list) - 1]}', disable_notification=True)
+
         iteration += 1
         time.sleep(180)
 
