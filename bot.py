@@ -6,6 +6,7 @@ import telegram
 from telegram.error import BadRequest, RetryAfter, TimedOut, NetworkError
 import talkpoint_config
 import asyncio
+import datetime
 
 list = []
 
@@ -117,7 +118,7 @@ bot = telegram.Bot(token=talkpoint_config.TOKEN)
 async def main():
     global iteration
     while True:
-        print('Running talkpoint.de...')
+        print(f'Running talkpoint.de... ({datetime.datetime.now()})')
         result = await getData('https://talk-point.de/collections/unsere-beste-b-ware?sort=created-descending')
         if result == 'CRASH':
             await bot.send_message(chat_id=channel_id, text='TalkPoint crashed due to failed link',
